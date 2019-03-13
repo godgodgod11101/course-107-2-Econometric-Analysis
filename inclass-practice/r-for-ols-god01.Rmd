@@ -55,7 +55,7 @@ data("Journals")
 
 ```{r ch2-summary, results='hide'}
 # if follow usage
-
+mutate(Journals,citeprice=price/citations)->journals
 # pipe expression
 mutate(
   Journals,citeprice=price/citations
