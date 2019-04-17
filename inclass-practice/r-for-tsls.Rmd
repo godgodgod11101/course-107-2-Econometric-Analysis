@@ -16,3 +16,125 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, eval=T)
 ```
+
+```{r}
+
+library(dplyr)
+library(magrittr)
+library(AER)
+
+```
+
+```{r}
+
+data("CigarettesSW")
+
+```
+
+as_tibble
+```{r}
+
+CigarettesSW %<>% as_tibble() #function要有刮號，%<>%：magrittr套件下的東西，意為把左邊的丟到右邊再丟回去(雙向串接)
+CigarettesSW
+
+```
+
+```{r}
+CigarettesSW %<>% filter(year=="1995") -> CigarettesSW
+
+```
+
+```{r}
+
+CigarettesSW %<>% 
+  mutate(
+    rprice=price/cpi,
+    rincome=income/(population*cpi),
+    tdiff=(taxs-tax)/cpi
+  ) -> CigarettesSW
+
+```
+
+
+```{r}
+
+model1<-log(packs) ~ log(rprice) 
+model2<-log(packs) ~ log(rprice) + log(rincome)
+
+```
+
+```{r}
+
+ols1<-lm(model1,CigarettesSW)
+ols2<-lm(model2,CigarettesSW)
+
+library(sandwich)
+library(lmtest)
+library(stargazer)
+
+#使用vcovHC函數來計算HC1型的異質變異（即橫斷面資料下的線性迴歸模型）
+coeftest(ols1, vcov. = vcovHC, type="HC1") -> ols1_coeftest
+coeftest(ols2, vcov. = vcovHC, type="HC1") -> ols2_coeftest
+
+```
+
+```{r}
+
+ols1
+ols1_coeftest
+
+```
+
+
+```{r, results='asis'}
+
+library(stargazer)
+
+stargazer(ols1_coeftest, ols2_coeftest, 
+          se = list (ols1_coeftest[,2],  ols2_coeftest[,2]),
+          type="html")
+
+```
+
+
+```{r}
+
+tsls_1iv <- ivreg(
+  log(packs) ~ log(rprice) + log(rincome) | log(rincome) + tdiff,
+  data=CigarettesSW
+  ) 
+
+tsls_2iv <- ivreg(
+  log(packs) ~ log(rprice) + log(rincome) | log(rincome) + tdiff + I(tax/cpi),
+  data=CigarettesSW
+  ) # I() 先形成新的變數，再來跑迴歸
+
+```
+
+```{r}
+
+library(broom)
+tidy(tsls_1iv)
+
+```
+
+
+```{r}
+
+summary(tsls_1iv, vcov = sandwich, diagnostics = TRUE, df=Inf)
+
+```
+
+```{r}
+
+summary(tsls_2iv, vcov = sandwich, diagnostics = TRUE, df=Inf)
+
+```
+
+```{r}
+
+class(tsls_1iv) # summary 在AER套件下延伸的功能，因為 tsls_1iv 為iverg的類型
+
+
+```
+
