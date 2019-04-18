@@ -14,7 +14,20 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval=T)
+
+# setup：命名chunk，方便找
+# include：TRUE = 執行程式碼後，「程式碼成果」要含在文件輸出；FALSE = 執行程式碼後，「程式碼成果」不要在文件輸出。
+
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F, eval=T) # global設定
+
+# echo: TRUE＝「程式碼」要含在文件輸出。
+# message: TRUE = 程式碼執行的「附帶訊息」要含在文件輸出。
+# warning: TRUE = 程式碼執行（若有）「錯誤訊息」要含在文件輸出。
+
+# eval: TRUE = 「程式碼」執行。除了TRUE/FALSE，也可指定那幾個expression要輸出，expression不是程式行，而是一個完整的程式表達。如：eval=c(1,5)是指第1和第5個程式表達要輸出。
+# result: 用來細部控制程式碼「產生的文字成果」輸出。“markup” = 輸出符合LaTeX格式（內定）。“asis” = 維持螢幕所見輸出。“hide” = 不輸出。
+# 當chunk設定與global打架時，以chunk為主。
+
 ```
 
 # 參考資料
@@ -22,10 +35,6 @@ knitr::opts_chunk$set(echo = TRUE, eval=T)
   * [dplyr minicourse, 陳柏銘](https://bookdown.org/PoMingChen/Dplyr_minicourse/)
   
   * R magrittr 套件：在 R 中使用管線（Pipe）處理資料流 - G. T. Wang. (2016). G. T. Wang. Retrieved 5 March 2019, from https://blog.gtwang.org/r/r-pipes-magrittr-package/
-
-```{r, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message=FALSE)
-```
 
 
 # setup
@@ -53,28 +62,72 @@ data("Journals")
 
 # 資料處理：產生新變數 dplyr::mutate
 
-```{r ch2-summary, results='hide'}
-# if follow usage
-mutate(Journals,citeprice=price/citations)->journals
-# pipe expression
+```{r ch2-summary}
+
+# if follow usage,
+
 mutate(
-  Journals,citeprice=price/citations
-  )->
-  journals
+       Journals,
+       citeprice=price/citations
+      ) -> journals
+
+# pipe expression,
+
+Journals %>%    # %>%：串接程式
+  mutate(
+         citeprice=price/citations
+        ) -> journals
+
 
 ```
+
 
 # 因果問句
 
 > 期刊的價格(citeprice，平均文獻引用價格)如何影響其圖書館訂閱量(subs)? 
 
 ```{r, include=FALSE}
+
 library(psych)
 
 ```
 
 
-```{r ols-paircorr-r, echo=TRUE}
+```{r}
+
+# traditional usage
+
+select(journals,citeprice,subs) -> tempDF
+pairs.panels(tempDF)
+
+```
+
+```{r}
+
+# pipe expression 1
+
+journals %>% 
+  select(citeprice,subs) ->
+  tempDF
+
+tempDF %>%
+  pairs.panels()
+
+```
+
+```{r}
+
+# pipe expression 2
+
+journals %>% 
+  select(citeprice,subs) %>%
+  pairs.panels()
+
+
+```
+
+
+```{r ols-paircorr-r}
 
 journals %>% 
   select(citeprice,subs) %>%
@@ -85,13 +138,25 @@ journals %>%
 ```
 
 
-```{r ols-paircorr2-r}
-
-```
-
 > 為什麼取log後，兩者的相關度變高？它表示兩個變數變得更不獨立嗎？
 
 # 效應評估
+
+
+當解釋變數並非直接代表有沒有受試的dummy variable(即只有0或1可能值)時，可以用以下的間斷例子來思考迴歸模型的係數含意：
+
+假設$P_i$就只有高價（$P_H$）及低價（$P_L$）兩種，$Y_{Hi},Y_{Li}$分別代表期刊$i$在在高價及低價的訂閱量，我們觀察到的訂量$Y_i$只會是$Y_{Hi},Y_{Li}$其中一個。我們可以將$Y_i$與$P_i$寫成如下的效應關係：
+
+$$Y_i=Y_{Li}+\frac{Y_{Hi}-Y_{Li}}{P_H-P_L}(P_i-P_L)$$
+
+
+若假設價格對每個期刊帶來的單位變化固定，即：
+$$\frac{Y_{Hi}-Y_{Li}}{P_H-P_L}=\beta_1^*$$
+
+則
+$$Y_i=Y_{Li}+\beta_1^*(P_i-P_L)$$
+
+
 
 > 單純比較不同「期刊價格」(citeprice)的期刊所獨得的圖書館「訂閱數」(subs)變化並無法反應真正的「期刊價格」效應，原因是「立足點」並不與「期刊價格」獨立。
 
