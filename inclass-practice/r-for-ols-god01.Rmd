@@ -216,12 +216,37 @@ library(broom)
 
 ```
 
+```{r}
+
+tidy(model1) #顯示迴歸係數等相關估計量
+
+```
+
 
 ```{r}
 
-tidy(model1)
+augment(model1) #顯示所有樣本點的配適值、殘差值等
 
 ```
+
+
+```{r}
+
+glance(model1) #顯示model的診斷數據
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ```{r, include=FALSE}
