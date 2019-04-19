@@ -209,7 +209,6 @@ journals %>%
 ```
 
 
-
 ```{r, include=FALSE}
 
 library(broom)
@@ -222,13 +221,11 @@ tidy(model1) #顯示迴歸係數等相關估計量
 
 ```
 
-
 ```{r}
 
 augment(model1) #顯示所有樣本點的配適值、殘差值等
 
 ```
-
 
 ```{r}
 
@@ -237,17 +234,7 @@ glance(model1) #顯示model的診斷數據
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
+## 模型比較
 
 ```{r, include=FALSE}
 
@@ -257,28 +244,71 @@ library(stargazer)
 
 ```
  
- 
- standard error:使用矩陣
-```{r ,  results='asis'}
-
-coeftest(model1, vcov. = vcovHC, type="HC1") -> model_1_coeftest
-coeftest(model2, vcov. = vcovHC, type="HC1") -> model_2_coeftest
-
-stargazer(model1, model2, 
-          se=list(model_1_coeftest[,"Std. Error"], model_2_coeftest[,2]),
-          type="html",
-          align=TRUE)
-```
-
-
-standard error: tidy 1
-```{r}
-
-```
-
-
-## 模型比較
-
 ```{r ols-comp-r, results='hide', warning=FALSE}
 
+#使用vcovHC函數（在sandwich套件裡，HC表Heteroscedasticity Consistent）來計算model1、model2(橫斷面資料)的共變異數矩陣
+coeftest(model1, vcov. = vcovHC, type="HC1") -> model1_coeftest #HC1不重要
+coeftest(model2, vcov. = vcovHC, type="HC1") -> model2_coeftest
+
+#vcovHAC表Heteroscedasticity Autocorrelation Consistent
+
+#model1_coeftest、model2_coeftest為矩陣型式，非data frame
+
+
 ```
+
+未使用robust standard error
+```{r, results='asis'}
+
+stargazer(model1, model2,
+          type = "html",
+          align=TRUE
+          )
+
+```
+
+
+ 
+使用矩陣取robust standard error
+```{r, results='asis'}
+
+stargazer(model1, model2, 
+          se=list(model1_coeftest[,"Std. Error"], model2_coeftest[,2]),
+          type="html",
+          align=TRUE)
+
+```
+
+使用data frame取robust standard error
+```{r}
+
+tidy(model1_coeftest) -> model1_coeftestDF
+tidy(model2_coeftest) -> model2_coeftestDF
+
+```
+
+```{r, results='asis'}
+
+stargazer(model1, model2,
+          se=list(
+            model1_coeftestDF$std.error, 
+            model2_coeftestDF$std.error
+            ),
+          type = "html",
+          align=TRUE)
+
+
+```
+
+```{r, results='asis'}
+
+stargazer(model1, model2,
+          se=list(
+            tidy(model1_coeftest)$std.error, 
+            tidy(model2_coeftest)$std.error
+            ),
+          type = "html",
+          align=TRUE)
+
+```
+
