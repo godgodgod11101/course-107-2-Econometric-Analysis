@@ -179,22 +179,40 @@ $$Y_i=Y_{Li}+\beta_1^*(P_i-P_L)$$
 # 複迴歸模型
 
 ```{r}
-#traditional
-journals %>%
-  lm(log(subs)~log(citeprice),data=.) -> model1
-
-journals %>%
-  lm(log(subs)~log(citeprice)+foundingyear,data=.) -> model2
-
-summary(model1)
-summary(model2)
+a <- NA
 
 ```
+
+
+```{r}
+
+is.na(a)   #判斷資料是否為not available的正確寫法
+
+a == "NA"  #判斷數值是否為not available的錯誤寫法，電腦無從判斷a是否等於字串NA
+
+```
+
+```{r}
+
+# traditional
+lm(log(subs)~log(citeprice), data = journals)
+
+# pipe
+
+journals %>%
+  lm(log(subs)~log(citeprice), data = .) -> model1
+
+
+journals %>%
+  lm(log(subs)~log(citeprice)+foundingyear, data = .) -> model2
+
+```
+
+
 
 ```{r, include=FALSE}
 
 library(broom)
-
 
 ```
 
@@ -202,6 +220,7 @@ library(broom)
 ```{r}
 
 tidy(model1)
+
 ```
 
 
