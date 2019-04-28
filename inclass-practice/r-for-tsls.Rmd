@@ -17,7 +17,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, eval=T)
 ```
 
-```{r}
+```{r ,include=FALSE}
 
 library(dplyr)
 library(magrittr)
@@ -31,49 +31,107 @@ data("CigarettesSW")
 
 ```
 
-as_tibble
 ```{r}
 
-CigarettesSW %<>% as_tibble() #function要有刮號，%<>%：magrittr套件下的東西，意為把左邊的丟到右邊再丟回去(雙向串接)
+class(CigarettesSW)
+
+```
+
+
+as_tibble()
+
+```{r 11}
+
+CigarettesSW %>% as_tibble() -> CigarettesSW #串接寫法
+as_tibble(CigarettesSW) -> CigarettesSW #非串接寫法
+# function要有刮號
+class(CigarettesSW)
 CigarettesSW
 
 ```
 
-```{r}
-CigarettesSW %<>% filter(year=="1995") -> CigarettesSW
+```{r 12}
+
+CigarettesSW %<>% as_tibble() # %<>%：magrittr套件下的功能，意為雙向串接
+CigarettesSW
 
 ```
 
-```{r}
+
+
+
+```{r 21}
+
+CigarettesSW %>% filter(year=="1995") -> CigarettesSW # 只取1995年資料
+
+```
+
+```{r 22}
+CigarettesSW %<>% filter(year=="1995") 
+
+```
+
+```{r 3}
 
 CigarettesSW %<>% 
   mutate(
     rprice=price/cpi,
     rincome=income/(population*cpi),
     tdiff=(taxs-tax)/cpi
+  )
+
+CigarettesSW %>%
+  mutate(
+    rprice = price/cpi,
+    rincome = income/(population*cpi),
+    tdiff = (taxs-tax)/cpi
   ) -> CigarettesSW
 
 ```
 
 
-```{r}
+```{r 41}
 
 model1<-log(packs) ~ log(rprice) 
-model2<-log(packs) ~ log(rprice) + log(rincome)
+model2<-log(packs) ~ log(rprice) + log(rincome) #可先把formula存起來
+class(model1)
 
 ```
 
+```{r 42}
+
+model1_noConstant <- log(packs) ~ log(rprice)+0
+model1_noConstant <- log(packs) ~ log(rprice)-1
+# 無截距回歸
+
+```
+
+
+
+OLS
 ```{r}
 
 ols1<-lm(model1,CigarettesSW)
 ols2<-lm(model2,CigarettesSW)
 
+```
+
+
+```{r, include=FALSE}
+
 library(sandwich)
 library(lmtest)
 library(stargazer)
 
+```
+
+
+```{r}
+
+
+
 #使用vcovHC函數來計算HC1型的異質變異（即橫斷面資料下的線性迴歸模型）
-coeftest(ols1, vcov. = vcovHC, type="HC1") -> ols1_coeftest
+lmtest::coeftest(ols1, vcov. = sandwich::vcovHC, type="HC1") -> ols1_coeftest
 coeftest(ols2, vcov. = vcovHC, type="HC1") -> ols2_coeftest
 
 ```
@@ -82,13 +140,12 @@ coeftest(ols2, vcov. = vcovHC, type="HC1") -> ols2_coeftest
 
 ols1
 ols1_coeftest
+# 調整standard error不影響迴歸係數
 
 ```
 
 
 ```{r, results='asis'}
-
-library(stargazer)
 
 stargazer(ols1_coeftest, ols2_coeftest, 
           se = list (ols1_coeftest[,2],  ols2_coeftest[,2]),
@@ -97,31 +154,63 @@ stargazer(ols1_coeftest, ols2_coeftest,
 ```
 
 
+
+
+
+TSLS
 ```{r}
 
 tsls_1iv <- ivreg(
   log(packs) ~ log(rprice) + log(rincome) | log(rincome) + tdiff,
   data=CigarettesSW
   ) 
+# ivreg為AER套件下的函式，前面放2-stage，後面放1-stage（所有工具變數）
 
 tsls_2iv <- ivreg(
   log(packs) ~ log(rprice) + log(rincome) | log(rincome) + tdiff + I(tax/cpi),
   data=CigarettesSW
-  ) # I() 先形成新的變數，再來跑迴歸
+  ) 
+# I()：先形成新的變數，再來跑迴歸
+
+```
+
+```{r, include=FALSE}
+
+library(broom)
 
 ```
 
 ```{r}
 
-library(broom)
+tidy(ols1)
 tidy(tsls_1iv)
 
 ```
 
+```{r}
+
+class(tsls_1iv)
+
+```
+
+
+
+Sargan：排除條件檢定
+Weak instruments：工具變數關聯性檢定
+Wu-Hausman：遺漏變數偏誤檢定
+
+```{r}
+
+summary(tsls_1iv, diagnostics = T, df = Inf)
+
+```
 
 ```{r}
 
 summary(tsls_1iv, vcov = sandwich, diagnostics = TRUE, df=Inf)
+# vcov = sandwich：使用sandwich公式調整的standard error
+# diagnostics = TRUE, df=Inf：做工具變數的三個檢定，自由度為無限（大樣本）
+
 
 ```
 
@@ -133,8 +222,9 @@ summary(tsls_2iv, vcov = sandwich, diagnostics = TRUE, df=Inf)
 
 ```{r}
 
-class(tsls_1iv) # summary 在AER套件下延伸的功能，因為 tsls_1iv 為iverg的類型
-
+class(ols1)
+# 如果summary(ols, ...)，無法直接用vcov功能，原因是ols不是ivreg物件
+# summary()在物件為ivreg時的特別功能為AER套件裡增加的，非base套件下的summary()
 
 ```
 
