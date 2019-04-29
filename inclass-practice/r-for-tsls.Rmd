@@ -63,6 +63,7 @@ CigarettesSW
 ```{r 21}
 
 CigarettesSW %>% filter(year=="1995") -> CigarettesSW # 只取1995年資料
+# 使用filter()函式可選要分析的觀察值，也就是針對Row做子集，使用方法為filter(資料名稱, 篩選條件)
 
 ```
 
@@ -111,8 +112,8 @@ model1_noConstant <- log(packs) ~ log(rprice)-1
 OLS
 ```{r}
 
-ols1<-lm(model1,CigarettesSW)
-ols2<-lm(model2,CigarettesSW)
+ols1<-lm(model1, data=CigarettesSW)
+ols2<-lm(model2, CigarettesSW)
 
 ```
 
@@ -128,9 +129,6 @@ library(stargazer)
 
 ```{r}
 
-
-
-#使用vcovHC函數來計算HC1型的異質變異（即橫斷面資料下的線性迴歸模型）
 lmtest::coeftest(ols1, vcov. = sandwich::vcovHC, type="HC1") -> ols1_coeftest
 coeftest(ols2, vcov. = vcovHC, type="HC1") -> ols2_coeftest
 
@@ -147,9 +145,12 @@ ols1_coeftest
 
 ```{r, results='asis'}
 
-stargazer(ols1_coeftest, ols2_coeftest, 
+stargazer(ols1, ols2, 
+          column.labels = c("簡迴歸","複迴歸"), 
           se = list (ols1_coeftest[,2],  ols2_coeftest[,2]),
-          type="html")
+          type="html",
+          align=T
+          )
 
 ```
 
@@ -182,7 +183,7 @@ library(broom)
 
 ```{r}
 
-tidy(ols1)
+tidy(ols2)
 tidy(tsls_1iv)
 
 ```
