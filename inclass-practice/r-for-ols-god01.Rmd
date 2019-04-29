@@ -51,7 +51,12 @@ library("knitr")
 
 
 ```{r}
+
 data("Journals")
+
+class(Journals) # 查詢物件的類別
+names(Journals) # 查詢資料變數名稱
+
 ```
 
 
@@ -97,7 +102,8 @@ library(psych)
 
 # traditional usage
 
-select(journals,citeprice,subs) -> tempDF
+select(journals, citeprice, subs) -> tempDF
+# select()函式可選要分析的欄位，也就是針對Column做子集，函式使用方式為select(資料名稱, 欄位條件1, 欄位條件2, ...)
 pairs.panels(tempDF)
 
 ```
@@ -206,6 +212,9 @@ journals %>%
 journals %>%
   lm(log(subs)~log(citeprice)+foundingyear, data = .) -> model2
 
+class(model1)
+
+
 ```
 
 
@@ -248,6 +257,8 @@ library(stargazer)
 
 #使用vcovHC函數（在sandwich套件裡，HC表Heteroscedasticity Consistent）來計算model1、model2(橫斷面資料)的共變異數矩陣
 coeftest(model1, vcov. = vcovHC, type="HC1") -> model1_coeftest #HC1不重要
+coeftest(model1, vcov. = sandwich) -> model1_coeftest1 #直接打vcov.=sandwich就是HC0
+
 coeftest(model2, vcov. = vcovHC, type="HC1") -> model2_coeftest
 
 #vcovHAC表Heteroscedasticity Autocorrelation Consistent
@@ -256,6 +267,14 @@ coeftest(model2, vcov. = vcovHC, type="HC1") -> model2_coeftest
 
 
 ```
+
+```{r}
+
+model1_coeftest
+model1_coeftest1
+
+```
+
 
 未使用robust standard error
 ```{r, results='asis'}
@@ -311,4 +330,18 @@ stargazer(model1, model2,
           align=TRUE)
 
 ```
+
+直接用coeftest來stargazer：
+```{r ,results='asis'}
+
+stargazer(model1_coeftest, model2_coeftest, 
+          type = "html", 
+          align = T
+          )
+# 少了lm的一些資訊
+
+```
+
+
+
 
