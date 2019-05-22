@@ -1,0 +1,89 @@
+---
+title: "r for panel"
+author: "王正評"
+date: "5/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 引入資料
+
+```{r}
+
+library(readr)
+fatality <- read_csv("https://raw.githubusercontent.com/tpemartin/Econometric-Analysis/master/Part%20II/fatality.csv")
+
+```
+
+## 套件
+
+```{r pakages, include=FALSE}
+
+library(dplyr)
+library(magrittr)
+library(plm)
+library(ggplot2)
+
+```
+
+##宣告資料為Panel data frame
+
+```{r}
+
+fatality<-pdata.frame(fatality,c("state","year"))
+
+```
+
+## 初步資料觀察
+
+```{r}
+
+fatality %>% 
+  ggplot()+
+  geom_point( aes( x=beertax, y=I(mrall*1000) ) )
+
+```
+
+不同州用不同顏色畫離散圖：
+
+```{r}
+
+fatality %>% 
+  ggplot()+
+  geom_point( aes( x=beertax, y=I(mrall*1000), color=state ) )
+
+```
+
+不同年用不同顏色畫離散圖：
+
+```{r}
+
+fatality %>% 
+  ggplot()+
+  geom_point(aes(x=beertax,y=I(mrall*1000),color=year))
+
+```
+
+
+## 組內差異
+
+```{r}
+
+fatality %>% 
+  group_by(state) %>% #依state分組進行以下程序
+  mutate(
+    mrall_demean=mrall-mean(mrall),
+    beertax_demean=beertax-mean(beertax)
+    ) %>%
+  select(mrall_demean,beertax_demean) %>%
+  ungroup() -> demean_results # grouping variable會被保留
+
+```
+
+
+
+
+
