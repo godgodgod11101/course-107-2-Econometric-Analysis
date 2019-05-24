@@ -18,6 +18,13 @@ fatality <- read_csv("https://raw.githubusercontent.com/tpemartin/Econometric-An
 
 ```
 
+```{r}
+
+class(fatality)
+
+```
+
+
 ## 套件
 
 ```{r pakages, include=FALSE}
@@ -29,13 +36,21 @@ library(ggplot2)
 
 ```
 
+
 ##宣告資料為Panel data frame
 
 ```{r}
 
-fatality<-pdata.frame(fatality,c("state","year"))
+fatality_pdf<-pdata.frame(fatality,c("state","year"))
 
 ```
+
+```{r}
+
+class(fatality_pdf)
+
+```
+
 
 ## 初步資料觀察
 
