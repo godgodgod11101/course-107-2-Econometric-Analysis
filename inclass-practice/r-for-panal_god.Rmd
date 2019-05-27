@@ -56,7 +56,7 @@ class(fatality_pdf)
 
 ```{r}
 
-fatality %>% 
+fatality_pdf %>% 
   ggplot()+
   geom_point( aes( x=beertax, y=I(mrall*1000) ) )
 
@@ -64,11 +64,61 @@ fatality %>%
 
 不同州用不同顏色畫離散圖：
 
+1. mapping（aes函數）的color設定
+```{r}
+
+fatality_pdf %>% 
+  ggplot()+
+  geom_point(
+    aes(x=beertax,
+        y=I(mrall*1000),
+        color=state
+        )
+    )
+
+```
+
+2. 非mapping（aes函數）的color設定
+```{r}
+
+fatality_pdf %>% 
+  ggplot()+
+  geom_point(
+    aes(x=beertax,
+        y=I(mrall*1000)
+        ),
+    color="blue"
+    )
+
+```
+
+3. state的資料為numeric型式（未將fatality轉成panal data）
+```{r}
+
+fatality %>%
+  ggplot()+
+  geom_point(
+    aes(x=beertax,
+        y=I(mrall*1000),
+        color=state)
+   )
+# R認為state是數值，所以將資料點用漸層色表示
+
+```
+
+4. 宣告state為類別變數
 ```{r}
 
 fatality %>% 
   ggplot()+
-  geom_point( aes( x=beertax, y=I(mrall*1000), color=state ) )
+  geom_point(
+    aes(x=beertax,
+        y=I(mrall*1000),
+        color=as.factor(state)
+        )
+    )
+
+# R認為state是類別變數，大小不具意義，所以將資料點用不同顏色表示
 
 ```
 
@@ -76,9 +126,30 @@ fatality %>%
 
 ```{r}
 
-fatality %>% 
+fatality_pdf %>% 
   ggplot()+
-  geom_point(aes(x=beertax,y=I(mrall*1000),color=year))
+  geom_point(
+    aes(x=beertax,
+        y=I(mrall*1000),
+        color=year
+        )
+  )
+
+```
+
+不同州用不同顏色，不同年用不同形狀畫離散圖：
+
+```{r}
+
+fatality_pdf %>% 
+  ggplot()+
+  geom_point(
+    aes(x=beertax,
+        y=I(mrall*1000),
+        color=state,
+        shape=year
+        )
+  )
 
 ```
 
@@ -87,18 +158,74 @@ fatality %>%
 
 ```{r}
 
-fatality %>% 
-  group_by(state) %>% #依state分組進行以下程序
+fatality_pdf %>% 
+  group_by(state) %>%        # 依state分組進行以下程序
   mutate(
     mrall_demean=mrall-mean(mrall),
     beertax_demean=beertax-mean(beertax)
-    ) %>%
-  select(mrall_demean,beertax_demean) %>%
-  ungroup() -> demean_results # grouping variable會被保留
+  ) %>%
+  select(state, mrall_demean, beertax_demean) -> demean_data
+
+# 保留state變數
 
 ```
 
+```{r}
 
+demean_data %>%
+  ggplot()+
+  geom_point(
+    aes(x=beertax_demean,
+        y=I(mrall_demean*1000),
+        color=state
+        )
+  )+
+  geom_smooth(
+    aes(x=beertax_demean,
+        y=I(mrall_demean*1000)
+        ),
+    method = "lm",
+    se = FALSE
+  )
+
+# method = "lm"：線性回歸線；se = FALSE：不要畫出信賴區間
+
+```
+
+demean後只是讓每個州的資料以原點為中心：
+
+1. demean後state 10的散佈圖
+```{r}
+
+demean_data %>%
+  filter(state==10) %>%
+  ggplot()+
+  geom_point(
+    aes(x=beertax_demean,
+        y=I(mrall_demean*1000),
+        color=state
+        ),
+    size=10
+  )
+
+
+```
+
+2. 原來state 10的散佈圖
+```{r}
+
+fatality_pdf %>%
+  filter(state==10) %>%
+  ggplot()+
+  geom_point(
+    aes(x=beertax,
+        y=I(mrall*1000),
+        color=state
+        ),
+    size=10
+  )
+
+```
 
 
 
