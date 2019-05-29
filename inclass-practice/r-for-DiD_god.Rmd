@@ -1,0 +1,125 @@
+---
+title: "r for panel"
+author: "王正評"
+date: "5/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## 套件
+
+```{r pakages, include=FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+```
+
+
+## 引入資料
+
+```{r}
+
+load(url("https://github.com/tpemartin/Econometric-Analysis/blob/master/data/public.rda?raw=true"))
+
+```
+
+```{r}
+
+public%>%
+  select(EMPFT, EMPPT, EMPFT2, EMPPT2) #資料為字串
+
+```
+
+```{r}
+
+public %>%
+  mutate_at(
+    vars(EMPFT,EMPPT,EMPFT2,EMPPT2),
+    list(as.numeric)      # funs的功能要被改掉了
+    ) -> public  
+
+
+
+
+```
+
+```{r}
+
+public %>% 
+  group_by(STATE) %>%             # 1 if NJ; 0 if Pa
+  summarise(mFT_before=mean(EMPFT, na.rm=T),
+            mPT_before=mean(EMPPT, na.rm=T),
+            mFT_after=mean(EMPFT2, na.rm=T),
+            mPT_after=mean(EMPPT2, na.rm=T)) %>%
+  ungroup -> employment_change
+
+```
+
+```{r}
+
+employment_change %>% 
+  select(STATE,mFT_before,mFT_after)
+
+
+```
+
+
+## 迴歸模型
+
+```{r}
+
+public %>%
+  select(STATE, EMPFT, EMPFT2)
+
+```
+
+
+```{r}
+
+library(tidyr)
+
+public %>% 
+  select(STATE,EMPFT,EMPFT2) %>%
+  group_by(STATE) %>%
+  gather(type,emp,-STATE) -> public2
+# 不考資料整理
+
+```
+
+產生虛擬變數
+
+```{r}
+
+public2 %>%
+  mutate(
+    STATE1=(STATE==1),
+    AFTER=(type=="EMPFT2"),
+    PolicyImpact=STATE1*AFTER
+  ) -> public2
+
+public2
+
+```
+
+
+
+```{r}
+
+lm(emp ~ STATE1+AFTER+PolicyImpact, data=public2)->DD_result
+DD_result
+
+```
+
+```{r}
+
+lm(emp~factor(STATE)*factor(type),data=public2)
+
+```
+
+
+
